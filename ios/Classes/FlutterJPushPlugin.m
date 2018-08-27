@@ -4,43 +4,44 @@
 
 #import <AdSupport/AdSupport.h>
 #import <UIKit/UIKit.h>
+
 #ifdef NSFoundationVersionNumber_iOS_9_x_Max
+
 #import <UserNotifications/UserNotifications.h>
+
 #endif
 
 #import "JPushActionQueue.h"
 #import "JPUSHService.h"
 
-@interface FlutterJPushPlugin ()<JPUSHRegisterDelegate> {
+@interface FlutterJPushPlugin () <JPUSHRegisterDelegate> {
     BOOL _isJPushDidLogin;
 }
 
-@property (nonatomic,retain) FlutterMethodChannel* channel;
+@property(nonatomic, retain) FlutterMethodChannel *channel;
 
 @end
 
 
-
 @implementation FlutterJPushPlugin
-+ (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
-    FlutterMethodChannel* channel = [FlutterMethodChannel
-                                     methodChannelWithName:@"flutter_jpush"
-                                     binaryMessenger:[registrar messenger]];
-    FlutterJPushPlugin* instance = [FlutterJPushPlugin sharedInstance];
++ (void)registerWithRegistrar:(NSObject <FlutterPluginRegistrar> *)registrar {
+    FlutterMethodChannel *channel = [FlutterMethodChannel
+            methodChannelWithName:@"flutter_jpush"
+                  binaryMessenger:[registrar messenger]];
+    FlutterJPushPlugin *instance = [FlutterJPushPlugin sharedInstance];
     instance.channel = channel;
-    [JPushActionQueue sharedInstance].isFlutterDidLoad = YES;
     [registrar addMethodCallDelegate:instance channel:channel];
 }
 
-- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-    NSString* method = call.method;
+- (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result {
+    NSString *method = call.method;
     if ([@"setupPush" isEqualToString:method]) {
         [self setupPush];
         result(@YES);
-    }else if ([@"startup" isEqualToString:method]) {
+    } else if ([@"startup" isEqualToString:method]) {
         [self startup];
         result(@YES);
-    }else if ([@"stopPush" isEqualToString:method]) {
+    } else if ([@"stopPush" isEqualToString:method]) {
         [self stopPush];
         result(@YES);
     } else if ([@"getLaunchAppNotification" isEqualToString:method]) {
@@ -48,11 +49,11 @@
     } else if ([@"getApplicationIconBadge" isEqualToString:method]) {
         [self getApplicationIconBadge:result];
     } else if ([@"addEvent" isEqualToString:method]) {
-        NSDictionary* map=call.arguments;
+        NSDictionary *map = call.arguments;
         [self addEvent:map[@"name"] location:map[@"location"] callback:result];
     } else if ([@"registerForRemoteNotificationTypes" isEqualToString:method]) {
-        NSDictionary* map=call.arguments;
-        [self registerForRemoteNotificationTypes:[map[@"types"] integerValue] categories:(map[@"categories"]==(id)[NSNull null] ?  nil : [NSSet setWithArray:map[@"categories"]])];
+        NSDictionary *map = call.arguments;
+        [self registerForRemoteNotificationTypes:[map[@"types"] integerValue] categories:(map[@"categories"] == (id) [NSNull null] ? nil : [NSSet setWithArray:map[@"categories"]])];
         result(@YES);
     } else if ([@"registerDeviceToken" isEqualToString:method]) {
         [self registerDeviceToken:call.arguments];
@@ -79,7 +80,7 @@
     } else if ([@"getAlias" isEqualToString:method]) {
         [self getAlias:result];
     } else if ([@"filterValidTags" isEqualToString:method]) {
-        [self filterValidTags:(call.arguments==(id)[NSNull null] ?  nil : [NSSet setWithArray:call.arguments]) callback:result];
+        [self filterValidTags:(call.arguments == (id) [NSNull null] ? nil : [NSSet setWithArray:call.arguments]) callback:result];
     } else if ([@"startLogPageView" isEqualToString:method]) {
         [self startLogPageView:call.arguments];
         result(@YES);
@@ -87,28 +88,28 @@
         [self stopLogPageView:call.arguments];
         result(@YES);
     } else if ([@"beginLogPageView" isEqualToString:method]) {
-        NSDictionary* map=call.arguments;
+        NSDictionary *map = call.arguments;
         [self beginLogPageView:map[@"pageName"] duration:[map[@"seconds"] intValue]];
         result(@YES);
     } else if ([@"crashLogON" isEqualToString:method]) {
         [self crashLogON];
         result(@YES);
     } else if ([@"setLatitude" isEqualToString:method]) {
-        NSDictionary* map=call.arguments;
+        NSDictionary *map = call.arguments;
         [self setLatitude:[map[@"latitude"] doubleValue] longitude:[map[@"longitude"] doubleValue]];
         result(@YES);
     } else if ([@"setLocation" isEqualToString:method]) {
         [self setLocation:call.arguments];
         result(@YES);
     } else if ([@"setLocalNotification" isEqualToString:method]) {
-        NSDictionary* map=call.arguments;
+        NSDictionary *map = call.arguments;
         [self setLocalNotification:map[@"fireDate"] alertBody:map[@"alertBody"] badge:[map[@"badge"] intValue] alertAction:map[@"alertAction"] identifierKey:map[@"notificationKey"] userInfo:map[@"userInfo"] soundName:map[@"soundName"]];
         result(@YES);
     } else if ([@"sendLocalNotification" isEqualToString:method]) {
         [self sendLocalNotification:call.arguments];
         result(@YES);
     } else if ([@"showLocalNotificationAtFront" isEqualToString:method]) {
-        NSDictionary* map=call.arguments;
+        NSDictionary *map = call.arguments;
         [self showLocalNotificationAtFront:map[@"notification"] identifierKey:map[@"notificationKey"]];
         result(@YES);
     } else if ([@"deleteLocalNotificationWithIdentifierKey" isEqualToString:method]) {
@@ -141,68 +142,65 @@
     } else if ([@"clearNotificationById" isEqualToString:method]) {
         [self clearNotificationById:[call.arguments integerValue]];
         result(@YES);
-    }  else {
+    } else {
         result(FlutterMethodNotImplemented);
     }
 }
 
-+(FlutterJPushPlugin*)sharedInstance{
++ (FlutterJPushPlugin *)sharedInstance {
     static FlutterJPushPlugin *sharedInstance = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        sharedInstance = [[FlutterJPushPlugin alloc]init];
+        sharedInstance = [[FlutterJPushPlugin alloc] init];
     });
     return sharedInstance;
 }
 
 
-
--(void)startup:(NSDictionary*)launchOptions  appKey:(NSString*)appKey channel:(NSString*)channel isProduction:(BOOL)isProduction{
+- (void)startup:(NSDictionary *)launchOptions appKey:(NSString *)appKey channel:(NSString *)channel isProduction:(BOOL)isProduction {
     // Override point for customization after application launch.
     NSString *advertisingId = [[[ASIdentifierManager sharedManager] advertisingIdentifier] UUIDString];
-    
+
     // 3.0.0及以后版本注册可以这样写，也可以继续用旧的注册方式
-    JPUSHRegisterEntity * entity = [[JPUSHRegisterEntity alloc] init];
-    entity.types = JPAuthorizationOptionAlert|JPAuthorizationOptionBadge|JPAuthorizationOptionSound;
+    JPUSHRegisterEntity *entity = [[JPUSHRegisterEntity alloc] init];
+    entity.types = JPAuthorizationOptionAlert | JPAuthorizationOptionBadge | JPAuthorizationOptionSound;
     [JPUSHService registerForRemoteNotificationConfig:entity delegate:self];
-    
+
     //如不需要使用IDFA，advertisingIdentifier 可为nil
     [JPUSHService setupWithOption:launchOptions appKey:appKey
                           channel:channel
                  apsForProduction:isProduction
             advertisingIdentifier:advertisingId];
-    
+
     //2.1.9版本新增获取registration id block接口。
     [JPUSHService registrationIDCompletionHandler:^(int resCode, NSString *registrationID) {
-        if(resCode == 0){
-            NSLog(@"registrationID获取成功：%@",registrationID);
-            
-        }
-        else{
-            NSLog(@"registrationID获取失败，code：%d",resCode);
+        if (resCode == 0) {
+            NSLog(@"registrationID获取成功：%@", registrationID);
+
+        } else {
+            NSLog(@"registrationID获取失败，code：%d", resCode);
         }
     }];
 }
 
 
-
 - (id)init {
     self = [super init];
     NSNotificationCenter *defaultCenter = [NSNotificationCenter defaultCenter];
-    
+
     [defaultCenter removeObserver:self];
-    
-    
+
+
     [defaultCenter addObserver:self
                       selector:@selector(networkConnecting:)
                           name:kJPFNetworkIsConnectingNotification
                         object:nil];
-    
+
     [defaultCenter addObserver:self
                       selector:@selector(networkRegister:)
                           name:kJPFNetworkDidRegisterNotification
                         object:nil];
-    
+
     [defaultCenter addObserver:self
                       selector:@selector(networkDidSetup:)
                           name:kJPFNetworkDidSetupNotification
@@ -223,42 +221,45 @@
                       selector:@selector(receiveRemoteNotification:)
                           name:kJPFDidReceiveRemoteNotification
                         object:nil];
-    
+
     [defaultCenter addObserver:self
                       selector:@selector(openNotification:)
                           name:kJPFOpenNotification
                         object:nil];
-    
+
     [defaultCenter addObserver:self
                       selector:@selector(openNotificationToLaunchApp:)
                           name:kJPFOpenNotificationToLaunchApp
                         object:nil];
-    
+
     return self;
 }
 
 - (void)startup {
     [[JPushActionQueue sharedInstance] scheduleNotificationQueue];
-    
+
     ///队列
     if ([JPushActionQueue sharedInstance].openedRemoteNotification != nil) {
-        [[NSNotificationCenter defaultCenter] postNotificationName:kJPFOpenNotificationToLaunchApp object:[JPushActionQueue sharedInstance].openedRemoteNotification];
+        [[NSNotificationCenter defaultCenter] postNotificationName:kJPFOpenNotification object:[JPushActionQueue sharedInstance].openedRemoteNotification];
+        [JPushActionQueue sharedInstance].openedRemoteNotification = nil;
     }
-    
-    if ([JPushActionQueue sharedInstance].openedLocalNotification != nil) {
-        [[NSNotificationCenter defaultCenter] postNotificationName:kJPFOpenNotificationToLaunchApp object:[JPushActionQueue sharedInstance].openedLocalNotification];
-    }
-    
+
+//    if ([JPushActionQueue sharedInstance].openedLocalNotification != nil) {
+//        [[NSNotificationCenter defaultCenter] postNotificationName:kJPFOpenNotificationToLaunchApp object:[JPushActionQueue sharedInstance].openedLocalNotification];
+//    }
+
     if (_isJPushDidLogin) {
         [[NSNotificationCenter defaultCenter] postNotificationName:kJPFNetworkDidLoginNotification object:nil];
     } else {
         [[NSNotificationCenter defaultCenter] postNotificationName:kJPFNetworkDidCloseNotification object:nil];
     }
+    [JPushActionQueue sharedInstance].isFlutterDidLoad = YES;
 }
+
 // request push notification permissions only
--(void)setupPush{
-    JPUSHRegisterEntity * entity = [[JPUSHRegisterEntity alloc] init];
-    entity.types = UNAuthorizationOptionAlert|UNAuthorizationOptionBadge|UNAuthorizationOptionSound;
+- (void)setupPush {
+    JPUSHRegisterEntity *entity = [[JPUSHRegisterEntity alloc] init];
+    entity.types = UNAuthorizationOptionAlert | UNAuthorizationOptionBadge | UNAuthorizationOptionSound;
     [JPUSHService registerForRemoteNotificationConfig:entity delegate:self];
 }
 
@@ -275,28 +276,28 @@
  }
  */
 
--(void)stopPush{
+- (void)stopPush {
     [[UIApplication sharedApplication] unregisterForRemoteNotifications];
 }
 
--(void)getLaunchAppNotification:(FlutterResult)callback{
+- (void)getLaunchAppNotification:(FlutterResult)callback {
     NSDictionary *notification;
     if ([JPushActionQueue sharedInstance].openedRemoteNotification != nil) {
-        notification = [self jpushFormatNotification: [JPushActionQueue sharedInstance].openedRemoteNotification];
+        notification = [self jpushFormatNotification:[JPushActionQueue sharedInstance].openedRemoteNotification];
         callback(notification);
         return;
     }
-    
+
     if ([JPushActionQueue sharedInstance].openedLocalNotification != nil) {
         notification = [self jpushFormatNotification:[JPushActionQueue sharedInstance].openedLocalNotification];
         callback(notification);
         return;
     }
-    
+
     callback([NSNull null]);
 }
 
--(void)getApplicationIconBadge:(FlutterResult)callback{
+- (void)getApplicationIconBadge:(FlutterResult)callback {
     callback(@([UIApplication sharedApplication].applicationIconBadgeNumber));
 }
 
@@ -309,7 +310,7 @@
 // TODO:
 - (void)openNotification:(NSNotification *)notification {
     NSDictionary *obj = [notification object];
-    [self.channel invokeMethod:@"openNotification" arguments: [self jpushFormatNotification:obj]];
+    [self.channel invokeMethod:@"openNotification" arguments:[self jpushFormatNotification:obj]];
 }
 
 - (NSMutableDictionary *)jpushFormatNotification:(NSDictionary *)dic {
@@ -319,7 +320,7 @@
     if (dic.count == 0) {
         return @[].mutableCopy;
     }
-    
+
     if (dic[@"aps"]) {
         return [self jpushFormatAPNSDic:dic];
     } else {
@@ -334,11 +335,11 @@
 - (NSMutableDictionary *)jpushFormatAPNSDic:(NSDictionary *)dic {
     NSMutableDictionary *extras = @{}.mutableCopy;
     for (NSString *key in dic) {
-        if([key isEqualToString:@"_j_business"]      ||
-           [key isEqualToString:@"_j_msgid"]         ||
-           [key isEqualToString:@"_j_uid"]           ||
-           [key isEqualToString:@"actionIdentifier"] ||
-           [key isEqualToString:@"aps"]) {
+        if ([key isEqualToString:@"_j_business"] ||
+                [key isEqualToString:@"_j_msgid"] ||
+                [key isEqualToString:@"_j_uid"] ||
+                [key isEqualToString:@"actionIdentifier"] ||
+                [key isEqualToString:@"aps"]) {
             continue;
         }
         // 和 android 统一将 extras 字段移动到 extras 里面
@@ -346,7 +347,7 @@
     }
     NSMutableDictionary *formatDic = dic.mutableCopy;
     formatDic[@"extras"] = extras;
-    
+
     // 新增 应用状态
     switch ([UIApplication sharedApplication].applicationState) {
         case UIApplicationStateInactive:
@@ -389,7 +390,7 @@
     _isJPushDidLogin = YES;
     [[JPushActionQueue sharedInstance] scheduleGetRidCallbacks];
     [self.channel invokeMethod:@"networkDidLogin" arguments:[JPUSHService registrationID]];
-    
+
 }
 
 - (void)networkDidReceiveMessage:(NSNotification *)notification {
@@ -397,10 +398,10 @@
 }
 
 - (void)receiveRemoteNotification:(NSNotification *)notification {
-    
+
     if ([JPushActionQueue sharedInstance].isFlutterDidLoad) {
         NSDictionary *obj = [notification object];
-        [self.channel invokeMethod:@"receiveNotification" arguments: [self jpushFormatNotification:obj]];
+        [self.channel invokeMethod:@"receiveNotification" arguments:[self jpushFormatNotification:obj]];
     } else {
         [[JPushActionQueue sharedInstance] postNotification:notification];
     }
@@ -411,7 +412,7 @@
     [self.channel invokeMethod:@"didRegisterToken" arguments:token];
 }
 
--(void)addEvent:(NSString *)name location:(NSString *)location callback:(FlutterResult)callback{
+- (void)addEvent:(NSString *)name location:(NSString *)location callback:(FlutterResult)callback {
     callback(name);
 }
 
@@ -429,19 +430,19 @@
  *
  * @discussion
  */
--(void)registerForRemoteNotificationTypes:(NSUInteger)types
-                               categories:(NSSet *)categories{
+- (void)registerForRemoteNotificationTypes:(NSUInteger)types
+                                categories:(NSSet *)categories {
     [JPUSHService registerForRemoteNotificationTypes:types categories:categories];
 }
 
--(void)registerDeviceToken:(NSData *)deviceToken{
+- (void)registerDeviceToken:(NSData *)deviceToken {
     [JPUSHService registerDeviceToken:deviceToken];
 }
 
 /*!
  * @abstract 处理收到的 APNs 消息
  */
--(void)handleRemoteNotification:(NSDictionary *)remoteInfo{
+- (void)handleRemoteNotification:(NSDictionary *)remoteInfo {
     [JPUSHService handleRemoteNotification:remoteInfo];
 }
 
@@ -449,140 +450,140 @@
 /*!
  * 设置 tags 的方法
  */
--(void)setTags:(NSArray *)tags
-      callback:(FlutterResult)callback{
-    
+- (void)setTags:(NSArray *)tags
+       callback:(FlutterResult)callback {
+
     NSSet *tagSet;
-    
+
     if (tags != NULL) {
         tagSet = [NSSet setWithArray:tags];
     }
-    
+
     self.asyCallback = callback;
     [JPUSHService setTags:tagSet completion:^(NSInteger iResCode, NSSet *iTags, NSInteger seq) {
         if (iResCode == 0) {
             callback(@{@"tags": [iTags allObjects] ?: @[],
-                         @"errorCode": @(0)
-                         });
+                    @"errorCode": @(0)
+            });
         } else {
             callback(@{@"errorCode": @(iResCode)});
         }
-    } seq: 0];
+    }                 seq:0];
 }
 
 /*!
  * 设置 Alias 的方法
  */
--(void)setAlias:(NSString *)alias
-       callback:(FlutterResult)callback{
-    
+- (void)setAlias:(NSString *)alias
+        callback:(FlutterResult)callback {
+
     self.asyCallback = callback;
     [JPUSHService setAlias:alias completion:^(NSInteger iResCode, NSString *iAlias, NSInteger seq) {
         if (iResCode == 0) {
             callback(@{@"alias": iAlias ?: @"",
-                         @"errorCode": @(0)
-                         });
+                    @"errorCode": @(0)
+            });
         } else {
             callback(@{@"errorCode": @(iResCode)});
         }
-    } seq: 0];
+    }                  seq:0];
 }
 
--(void)addTags:(NSArray *)tags
-      callback:(FlutterResult)callback{
+- (void)addTags:(NSArray *)tags
+       callback:(FlutterResult)callback {
     NSSet *tagSet;
-    
+
     if (tags != NULL) {
         tagSet = [NSSet setWithArray:tags];
     }
     [JPUSHService addTags:tagSet completion:^(NSInteger iResCode, NSSet *iTags, NSInteger seq) {
         if (iResCode == 0) {
             callback(@{@"tags": [iTags allObjects] ?: @[],
-                         @"errorCode": @(0)
-                         });
+                    @"errorCode": @(0)
+            });
         } else {
             callback(@{@"errorCode": @(iResCode)});
         }
-    } seq: 0];
+    }                 seq:0];
 }
 
--(void)deleteTags:(NSArray *)tags
-         callback:(FlutterResult)callback{
+- (void)deleteTags:(NSArray *)tags
+          callback:(FlutterResult)callback {
     NSSet *tagSet;
-    
+
     if (tags != NULL) {
         tagSet = [NSSet setWithArray:tags];
     }
     [JPUSHService deleteTags:tagSet completion:^(NSInteger iResCode, NSSet *iTags, NSInteger seq) {
         if (iResCode == 0) {
             callback(@{@"tags": [iTags allObjects] ?: @[],
-                         @"errorCode": @(0)
-                         });
+                    @"errorCode": @(0)
+            });
         } else {
             callback(@{@"errorCode": @(iResCode)});
         }
-    } seq: 0];
+    }                    seq:0];
 }
 
--(void)cleanTags:(FlutterResult)callback{
+- (void)cleanTags:(FlutterResult)callback {
     [JPUSHService cleanTags:^(NSInteger iResCode, NSSet *iTags, NSInteger seq) {
         if (iResCode == 0) {
             callback(@{@"tags": [iTags allObjects] ?: @[],
-                         @"errorCode": @(0)
-                         });
+                    @"errorCode": @(0)
+            });
         } else {
             callback(@{@"errorCode": @(iResCode)});
         }
-    } seq: 0];
+    }                   seq:0];
 }
 
--(void)getAllTags:(FlutterResult)callback{
+- (void)getAllTags:(FlutterResult)callback {
     [JPUSHService getAllTags:^(NSInteger iResCode, NSSet *iTags, NSInteger seq) {
         if (iResCode == 0) {
             callback(@{@"tags": [iTags allObjects] ?: @[],
-                         @"errorCode": @(0)
-                         });
+                    @"errorCode": @(0)
+            });
         } else {
             callback(@{@"errorCode": @(iResCode)});
         }
-    } seq: 0];
+    }                    seq:0];
 }
 
--(void)checkTagBindState:(NSString *)tag
-                callback:(FlutterResult)callback{
+- (void)checkTagBindState:(NSString *)tag
+                 callback:(FlutterResult)callback {
     [JPUSHService validTag:tag completion:^(NSInteger iResCode, NSSet *iTags, NSInteger seq, BOOL isBind) {
         if (iResCode == 0) {
             callback(@{@"isBind": @(isBind),
-                         @"errorCode": @(0)
-                         });
+                    @"errorCode": @(0)
+            });
         } else {
             callback(@{@"errorCode": @(iResCode)});
         }
-    } seq: 0];
+    }                  seq:0];
 }
 
--(void)deleteAlias:(FlutterResult)callback{
+- (void)deleteAlias:(FlutterResult)callback {
     [JPUSHService deleteAlias:^(NSInteger iResCode, NSString *iAlias, NSInteger seq) {
         if (iResCode == 0) {
             callback(@{@"alias": iAlias ?: @"",
-                         @"errorCode": @(0)
-                         });
+                    @"errorCode": @(0)
+            });
         } else {
             callback(@{@"errorCode": @(iResCode)});
         }
-    } seq: 0];
+    }                     seq:0];
 }
 
--(void)getAlias:(FlutterResult)callback{
+- (void)getAlias:(FlutterResult)callback {
     [JPUSHService getAlias:^(NSInteger iResCode, NSString *iAlias, NSInteger seq) {
         if (iResCode == 0) {
             callback(@{@"alias": iAlias ?: @"",
-                         @"errorCode": @(0)
-                         });
+                    @"errorCode": @(0)
+            });
         } else {
             callback(@{@"errorCode": @(iResCode)});
         }
-    } seq: 0];
+    }                  seq:0];
 }
 
 /*!
@@ -591,7 +592,7 @@
  * @discussion 如果 tags 数量超过限制数量, 则返回靠前的有效的 tags.
  * 建议设置 tags 前用此接口校验. SDK 内部也会基于此接口来做过滤.
  */
--(void)filterValidTags:(NSSet *)tags callback:(FlutterResult)callback{// -> nsset
+- (void)filterValidTags:(NSSet *)tags callback:(FlutterResult)callback {// -> nsset
     NSArray *arr = [[JPUSHService filterValidTags:tags] allObjects];
     callback(arr);
 }
@@ -606,7 +607,7 @@
  *
  * @param pageName 页面名称
  */
--(void)startLogPageView:(NSString *)pageName{
+- (void)startLogPageView:(NSString *)pageName {
     [JPUSHService startLogPageView:pageName];
 }
 
@@ -615,7 +616,7 @@
  *
  * @param pageName 页面
  */
--(void)stopLogPageView:(NSString *)pageName{
+- (void)stopLogPageView:(NSString *)pageName {
     [JPUSHService stopLogPageView:pageName];
 }
 
@@ -625,7 +626,7 @@
  * @param pageName 页面
  * @param seconds 停留的秒数
  */
--(void)beginLogPageView:(NSString *)pageName duration:(int)seconds{
+- (void)beginLogPageView:(NSString *)pageName duration:(int)seconds {
     [JPUSHService beginLogPageView:pageName duration:seconds];
 }
 
@@ -634,7 +635,7 @@
  *
  * @discussion 默认是关闭状态.
  */
--(void)crashLogON{
+- (void)crashLogON {
     [JPUSHService crashLogON];
 }
 
@@ -645,7 +646,7 @@
  * @param longitude 经度.
  *
  */
--(void)setLatitude:(double)latitude longitude:(double)longitude{
+- (void)setLatitude:(double)latitude longitude:(double)longitude {
     [JPUSHService setLatitude:latitude longitude:longitude];
 }
 
@@ -656,7 +657,7 @@
  *
  * @discussion 需要链接 CoreLocation.framework 并且 #import <CoreLocation/CoreLocation.h>
  */
--(void)setLocation:(CLLocation *)location{
+- (void)setLocation:(CLLocation *)location {
     [JPUSHService setLocation:location];
 }
 
@@ -678,14 +679,14 @@
  *
  * @discussion 最多支持 64 个定义
  */
--(void)setLocalNotification:(NSDate *)fireDate
-                  alertBody:(NSString *)alertBody
-                      badge:(int)badge
-                alertAction:(NSString *)alertAction
-              identifierKey:(NSString *)notificationKey
-                   userInfo:(NSDictionary *)userInfo
-                  soundName:(NSString *)soundName{
-    
+- (void)setLocalNotification:(NSDate *)fireDate
+                   alertBody:(NSString *)alertBody
+                       badge:(int)badge
+                 alertAction:(NSString *)alertAction
+               identifierKey:(NSString *)notificationKey
+                    userInfo:(NSDictionary *)userInfo
+                   soundName:(NSString *)soundName {
+
     [JPUSHService setLocalNotification:fireDate
                              alertBody:alertBody
                                  badge:badge
@@ -695,58 +696,56 @@
                              soundName:soundName];
 }
 
--(void)sendLocalNotification:(NSDictionary *)params{
-    
+- (void)sendLocalNotification:(NSDictionary *)params {
+
     JPushNotificationContent *content = [[JPushNotificationContent alloc] init];
     if (params[@"title"]) {
         content.title = params[@"title"];
     }
-    
+
     if (params[@"subtitle"]) {
         content.subtitle = params[@"subtitle"];
     }
-    
+
     if (params[@"content"]) {
         content.body = params[@"content"];
     }
-    
+
     if (params[@"badge"]) {
         content.badge = params[@"badge"];
     }
-    
+
     if (params[@"action"]) {
         content.action = params[@"action"];
     }
-    
+
     if (params[@"extra"]) {
         content.userInfo = params[@"extra"];
     }
-    
+
     if (params[@"sound"]) {
         content.sound = params[@"sound"];
     }
-    
+
     JPushNotificationTrigger *trigger = [[JPushNotificationTrigger alloc] init];
     if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 10.0) {
         if (params[@"fireTime"]) {
             NSNumber *date = params[@"fireTime"];
             NSTimeInterval currentInterval = [[NSDate date] timeIntervalSince1970];
-            NSTimeInterval interval = [date doubleValue]/1000 - currentInterval;
-            interval = interval>0?interval:0;
+            NSTimeInterval interval = [date doubleValue] / 1000 - currentInterval;
+            interval = interval > 0 ? interval : 0;
             trigger.timeInterval = interval;
         }
-    }
-    
-    else {
+    } else {
         if (params[@"fireTime"]) {
             NSNumber *date = params[@"fireTime"];
-            trigger.fireDate = [NSDate dateWithTimeIntervalSince1970: [date doubleValue]/1000];
+            trigger.fireDate = [NSDate dateWithTimeIntervalSince1970:[date doubleValue] / 1000];
         }
     }
     JPushNotificationRequest *request = [[JPushNotificationRequest alloc] init];
     request.content = content;
     request.trigger = trigger;
-    
+
     if (params[@"id"]) {
         NSNumber *identify = params[@"id"];
         request.requestIdentifier = [identify stringValue];
@@ -754,11 +753,10 @@
     request.completionHandler = ^(id result) {
         NSLog(@"result");
     };
-    
+
     [JPUSHService addNotification:request];
-    
-    
-    
+
+
 }
 
 /*!
@@ -769,24 +767,25 @@
  *
  * @discussion 默认App在前台运行时不会进行弹窗，在程序接收通知调用此接口可实现指定的推送弹窗。
  */
--(void)showLocalNotificationAtFront:(UILocalNotification *)notification
-                      identifierKey:(NSString *)notificationKey{
+- (void)showLocalNotificationAtFront:(UILocalNotification *)notification
+                       identifierKey:(NSString *)notificationKey {
     [JPUSHService showLocalNotificationAtFront:notification identifierKey:notificationKey];
 }
+
 /*!
  * @abstract 删除本地推送定义
  *
  * @param notificationKey 本地推送标示符
  * @param myUILocalNotification 本地推送对象
  */
--(void)deleteLocalNotificationWithIdentifierKey:(NSString *)notificationKey{
+- (void)deleteLocalNotificationWithIdentifierKey:(NSString *)notificationKey {
     [JPUSHService deleteLocalNotificationWithIdentifierKey:notificationKey];
 }
 
 /*!
  * @abstract 删除本地推送定义
  */
--(void)deleteLocalNotification:(UILocalNotification *)localNotification{
+- (void)deleteLocalNotification:(UILocalNotification *)localNotification {
     [JPUSHService deleteLocalNotification:localNotification];
 }
 
@@ -796,14 +795,14 @@
  * @param notificationKey 本地推送标示符
  * @return 本地推送对象数组, [array count]为0时表示没找到
  */
--(void)findLocalNotificationWithIdentifier:(NSString *)notificationKey callback:(FlutterResult)callback{// nsarray
+- (void)findLocalNotificationWithIdentifier:(NSString *)notificationKey callback:(FlutterResult)callback {// nsarray
     callback([JPUSHService findLocalNotificationWithIdentifier:notificationKey]);
 }
 
 /*!
  * @abstract 清除所有本地推送对象
  */
--(void)clearAllLocalNotifications{
+- (void)clearAllLocalNotifications {
     [JPUSHService clearAllLocalNotifications];
 }
 
@@ -829,9 +828,9 @@
  * - 调用服务器端 API 发 APNs 时(通常这个调用是批量针对大量用户),
  *   使用 "+1" 的语义, 来表达需要基于目标用户实际的 badge 值(保存的) +1 来下发通知时带上新的 badge 值;
  */
--(void)setBadge:(NSInteger)value callback:(FlutterResult)callback{// ->Bool
+- (void)setBadge:(NSInteger)value callback:(FlutterResult)callback {// ->Bool
     [[UIApplication sharedApplication] setApplicationIconBadgeNumber:value];
-    NSNumber *badgeNumber = [NSNumber numberWithBool:[JPUSHService setBadge: value]];
+    NSNumber *badgeNumber = [NSNumber numberWithBool:[JPUSHService setBadge:value]];
     callback(badgeNumber);
 }
 
@@ -841,8 +840,8 @@
  * @discussion 相当于 [setBadge:0] 的效果.
  * 参考 [JPUSHService setBadge:] 说明来理解其作用.
  */
--(void)resetBadge{
-    [[UIApplication sharedApplication] setApplicationIconBadgeNumber: 0];
+- (void)resetBadge {
+    [[UIApplication sharedApplication] setApplicationIconBadgeNumber:0];
     [JPUSHService resetBadge];
 }
 
@@ -861,7 +860,7 @@
  *
  * 更多的理解请参考 JPush 的文档网站.
  */
--(void)getRegistrationID:(FlutterResult)callback{// -> string
+- (void)getRegistrationID:(FlutterResult)callback {// -> string
 #if TARGET_IPHONE_SIMULATOR//模拟器
     NSLog(@"simulator can not get registrationid");
     callback(@"");
@@ -885,7 +884,7 @@
  *
  * 调用本接口可打开日志级别为: Debug, 打印调试日志.
  */
--(void)setDebugMode{
+- (void)setDebugMode {
     [JPUSHService setDebugMode];
 }
 
@@ -898,11 +897,11 @@
  *
  * 建议在发布的版本里, 调用此接口, 关闭掉日志打印.
  */
--(void)setLogOFF{
+- (void)setLogOFF {
     [JPUSHService setLogOFF];
 }
 
--(void)clearAllNotifications{
+- (void)clearAllNotifications {
     if ([[UIDevice currentDevice].systemVersion floatValue] >= 10.0) {
         [UNUserNotificationCenter.currentNotificationCenter removeAllPendingNotificationRequests];
     } else {
@@ -910,23 +909,30 @@
     }
 }
 
--(void)clearNotificationById:(NSInteger)identify{
+- (void)clearNotificationById:(NSInteger)identify {
     JPushNotificationIdentifier *pushIdentify = [[JPushNotificationIdentifier alloc] init];
     pushIdentify.identifiers = @[[@(identify) description]];
-    [JPUSHService removeNotification: pushIdentify];
+    [JPUSHService removeNotification:pushIdentify];
 }
 
 - (void)jpushNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(NSInteger))completionHandler {
-    NSDictionary * userInfo = notification.request.content.userInfo;
+    NSDictionary *userInfo = notification.request.content.userInfo;
+    NSLog(@"willPresentNotification---------:%@", userInfo);
     [JPUSHService handleRemoteNotification:userInfo];
     [[NSNotificationCenter defaultCenter] postNotificationName:kJPFDidReceiveRemoteNotification object:userInfo];
     completionHandler(UNNotificationPresentationOptionAlert);
 }
 
 - (void)jpushNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void (^)())completionHandler {
-    NSDictionary * userInfo = response.notification.request.content.userInfo;
+    NSDictionary *userInfo = response.notification.request.content.userInfo;
+    NSLog(@"didReceiveNotificationResponse----------:%@", userInfo);
     [JPUSHService handleRemoteNotification:userInfo];
-    [[NSNotificationCenter defaultCenter] postNotificationName:kJPFOpenNotification object:userInfo];
+    if ([JPushActionQueue sharedInstance].isFlutterDidLoad) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:kJPFOpenNotification object:userInfo];
+        [[NSNotificationCenter defaultCenter] postNotificationName:kJPFDidReceiveRemoteNotification object:userInfo];
+    } else {
+        [JPushActionQueue sharedInstance].openedRemoteNotification = userInfo;
+    }
     completionHandler();
 }
 @end

@@ -44,7 +44,7 @@ class JPushNotification {
       this.subtitle});
 
   factory JPushNotification.fromMap(dynamic dic, bool fromOpen) {
-    print("Enter new ");
+    print("Enter new $dic");
     try {
       if (Platform.isIOS) {
         dynamic aps = dic['aps'];
@@ -478,8 +478,9 @@ class FlutterJPush {
    * 如果不是通过点击推送启动应用，比如点击应用 icon 直接启动应用，notification 会返回 undefine。
    * @param {Function} cb = (notification) => {}
    */
-  static getLaunchAppNotification() async {
-    await _channel.invokeMethod("getLaunchAppNotification");
+  static Future<JPushNotification> getLaunchAppNotification() async {
+    dynamic dic = await _channel.invokeMethod("getLaunchAppNotification");
+    return new JPushNotification.fromMap(dic, true);
   }
 
   /**

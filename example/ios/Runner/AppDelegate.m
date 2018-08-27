@@ -10,7 +10,7 @@
 
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    [[FlutterJPushPlugin sharedInstance]startup:launchOptions appKey:@"2e8ee4e12160f1d3501bce0c" channel:@"jpush" isProduction:FALSE];
+    [[FlutterJPushPlugin sharedInstance]startup:launchOptions appKey:@"5f85173c2a828648e1717804" channel:@"jpush" isProduction:FALSE];
     
   [GeneratedPluginRegistrant registerWithRegistry:self];
   // Override point for customization after application launch.
@@ -41,7 +41,7 @@
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
     [application setApplicationIconBadgeNumber:0];
-    [application cancelAllLocalNotifications];
+//    [application cancelAllLocalNotifications];
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
