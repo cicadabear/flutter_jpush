@@ -6,7 +6,7 @@ import android.widget.Toast;
 
 public class Logger {
 
-    public static boolean SHUTDOWNLOG = true;
+    public static boolean SHUTDOWNLOG = false;
     public static boolean SHUTDOWNTOAST = true;
 
     public static void i(String tag, String msg) {

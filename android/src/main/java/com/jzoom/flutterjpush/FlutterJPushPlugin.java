@@ -1,5 +1,6 @@
 package com.jzoom.flutterjpush;
 
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import cn.jpush.android.service.JPushMessageReceiver;
@@ -25,6 +26,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.SparseArray;
 
+import com.example.flutterjpush.BuildConfig;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -38,6 +41,8 @@ import cn.jpush.android.api.CustomPushNotificationBuilder;
 import cn.jpush.android.api.JPushInterface;
 import cn.jpush.android.api.JPushMessage;
 import cn.jpush.android.data.JPushLocalNotification;
+
+import static android.content.Context.MODE_PRIVATE;
 
 /**
  * FlutterJPushPlugin
@@ -83,6 +88,9 @@ public class FlutterJPushPlugin implements MethodCallHandler {
         ));
 
         FlutterJPushPlugin.mRAC = registrar.activity();
+        saveMainActivityClass(registrar.context(), registrar.activity().getClass().getName());
+        Logger.SHUTDOWNLOG = !BuildConfig.DEBUG;
+        Logger.SHUTDOWNTOAST = !BuildConfig.DEBUG;
     }
 
     @Override
@@ -91,7 +99,7 @@ public class FlutterJPushPlugin implements MethodCallHandler {
         if ("initPush".equals(method)) {
             this.initPush();
             result.success(true);
-        }else if ("startup".equals(method)) {
+        } else if ("startup".equals(method)) {
             this.startup();
             result.success(true);
         } else if ("getInfo".equals(method)) {
@@ -177,6 +185,8 @@ public class FlutterJPushPlugin implements MethodCallHandler {
     private Context mContext;
     private static String mEvent;
     private static Bundle mCachedBundle;
+    private static Bundle openedRemoteNotification;
+    private static boolean isFlutterDidLoad;
     private static Activity mRAC;
 
     private final static String RECEIVE_NOTIFICATION = "receiveNotification";
@@ -206,6 +216,15 @@ public class FlutterJPushPlugin implements MethodCallHandler {
     public void startup() {
         mContext = getCurrentActivity();
         JPushInterface.init(getApplicationContext());
+        if (openedRemoteNotification != null) {
+            mCachedBundle = openedRemoteNotification;
+            mEvent = OPEN_NOTIFICATION;
+            if (mRAC != null) {
+                FlutterJPushPlugin.me().sendEvent();
+            }
+            openedRemoteNotification = null;
+        }
+        isFlutterDidLoad = true;
         Logger.i(TAG, "init Success!");
     }
 
@@ -260,8 +279,8 @@ public class FlutterJPushPlugin implements MethodCallHandler {
                     Map map = new HashMap();
                     map.put("id", (Integer) mCachedBundle.get(JPushInterface.EXTRA_NOTIFICATION_ID));
                     map.put("message", (String) mCachedBundle.get(JPushInterface.EXTRA_MESSAGE));
-                    map.put("title",(String)mCachedBundle.get(JPushInterface.EXTRA_TITLE));
-                    map.put("contentType",(String)mCachedBundle.get(JPushInterface.EXTRA_CONTENT_TYPE));
+                    map.put("title", (String) mCachedBundle.get(JPushInterface.EXTRA_TITLE));
+                    map.put("contentType", (String) mCachedBundle.get(JPushInterface.EXTRA_CONTENT_TYPE));
                     map.put("extras", (String) mCachedBundle.get(JPushInterface.EXTRA_EXTRA));
                     channel.invokeMethod("receivePushMsg", map);
                     break;
@@ -619,7 +638,7 @@ public class FlutterJPushPlugin implements MethodCallHandler {
             mCachedBundle = data.getExtras();
             if (JPushInterface.ACTION_MESSAGE_RECEIVED.equals(data.getAction())) {
                 try {
-                    if(!Logger.SHUTDOWNLOG){
+                    if (!Logger.SHUTDOWNLOG) {
                         String message = data.getStringExtra(JPushInterface.EXTRA_MESSAGE);
                         Logger.i(TAG, "收到自定义消息: " + message);
                     }
@@ -633,7 +652,7 @@ public class FlutterJPushPlugin implements MethodCallHandler {
                 }
             } else if (JPushInterface.ACTION_NOTIFICATION_RECEIVED.equals(data.getAction())) {
                 try {
-                    if(!Logger.SHUTDOWNLOG){
+                    if (!Logger.SHUTDOWNLOG) {
                         // 通知内容
                         String alertContent = (String) mCachedBundle.get(JPushInterface.EXTRA_ALERT);
                         // extra 字段的 json 字符串
@@ -658,7 +677,7 @@ public class FlutterJPushPlugin implements MethodCallHandler {
                     Intent intent;
                     if (isApplicationRunningBackground(context)) {
                         intent = new Intent();
-                        intent.setClassName(context.getPackageName(), context.getPackageName() + ".MainActivity");
+                        intent.setClassName(context.getPackageName(), getMainActivityClass(context));
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     } else {
                         intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
@@ -666,10 +685,15 @@ public class FlutterJPushPlugin implements MethodCallHandler {
                     }
                     intent.putExtras(mCachedBundle);
                     context.startActivity(intent);
-                    mEvent = OPEN_NOTIFICATION;
-                    if (mRAC != null) {
-                        FlutterJPushPlugin.me().sendEvent();
+                    if (isFlutterDidLoad) {
+                        mEvent = OPEN_NOTIFICATION;
+                        if (mRAC != null) {
+                            FlutterJPushPlugin.me().sendEvent();
+                        }
+                    } else {
+                        openedRemoteNotification = mCachedBundle;
                     }
+
                 } catch (Throwable e) {
                     e.printStackTrace();
                     Logger.i(TAG, "Shouldn't access here");
@@ -836,5 +860,15 @@ public class FlutterJPushPlugin implements MethodCallHandler {
             e.printStackTrace();
         }
 
+    }
+
+    private static void saveMainActivityClass(Context context, String className) {
+        SharedPreferences prefs = context.getSharedPreferences("JPUSH", MODE_PRIVATE);
+        prefs.edit().putString("MAIN_ACTIVITY_CLASSNAME", className).apply();
+    }
+
+    private static String getMainActivityClass(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences("JPUSH", MODE_PRIVATE);
+        return prefs.getString("MAIN_ACTIVITY_CLASSNAME", "");
     }
 }
