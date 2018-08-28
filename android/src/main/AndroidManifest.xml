@@ -2,7 +2,7 @@
   package="com.example.flutterjpush"
     xmlns:tools="http://schemas.android.com/tools">
     <!-- Required 一些系统要求的权限，如访问网络等-->
-    <uses-permission android:name="${applicationId}.permission.JPUSH_MESSAGE" />
+    <uses-permission android:name="${JPUSH_PKGNAME}.permission.JPUSH_MESSAGE" />
     <uses-permission android:name="android.permission.RECEIVE_USER_PRESENT" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -133,7 +133,7 @@
         <receiver android:name="com.jzoom.flutterjpush.FlutterJPushPlugin$MyJPushMessageReceiver">
             <intent-filter>
                 <action android:name="cn.jpush.android.intent.RECEIVE_MESSAGE" />
-                <category android:name="${applicationId}" />
+                <category android:name="${JPUSH_PKGNAME}" />
             </intent-filter>
         </receiver>
         <!-- Required  . Enable it you can get statistics data with channel -->
