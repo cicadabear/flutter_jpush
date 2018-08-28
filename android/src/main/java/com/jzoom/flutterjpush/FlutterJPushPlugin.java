@@ -51,7 +51,7 @@ public class FlutterJPushPlugin implements MethodCallHandler {
 
 
     private MethodChannel channel;
-    private Activity activity;
+    private static Activity activity;
 
     public FlutterJPushPlugin(MethodChannel channel, Activity activity) {
         sCacheMap = new SparseArray<>();
@@ -186,7 +186,7 @@ public class FlutterJPushPlugin implements MethodCallHandler {
     private static String mEvent;
     private static Bundle mCachedBundle;
     private static Bundle openedRemoteNotification;
-    private static boolean isFlutterDidLoad;
+    public static boolean isFlutterDidLoad;
     private static Activity mRAC;
 
     private final static String RECEIVE_NOTIFICATION = "receiveNotification";
@@ -685,7 +685,7 @@ public class FlutterJPushPlugin implements MethodCallHandler {
                     }
                     intent.putExtras(mCachedBundle);
                     context.startActivity(intent);
-                    if (isFlutterDidLoad) {
+                    if (isFlutterDidLoad && activity != null) {
                         mEvent = OPEN_NOTIFICATION;
                         if (mRAC != null) {
                             FlutterJPushPlugin.me().sendEvent();
