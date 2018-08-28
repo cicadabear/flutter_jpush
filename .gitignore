@@ -6,4 +6,8 @@
 pubspec.lock
 
 build/
+
 .idea
+android/.idea
+example/.idea
+example/android/.idea
