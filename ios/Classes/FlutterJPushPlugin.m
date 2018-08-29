@@ -917,7 +917,6 @@
 
 - (void)jpushNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(NSInteger))completionHandler {
     NSDictionary *userInfo = notification.request.content.userInfo;
-    NSLog(@"willPresentNotification---------:%@", userInfo);
     [JPUSHService handleRemoteNotification:userInfo];
     [[NSNotificationCenter defaultCenter] postNotificationName:kJPFDidReceiveRemoteNotification object:userInfo];
     completionHandler(UNNotificationPresentationOptionAlert);
@@ -925,11 +924,9 @@
 
 - (void)jpushNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void (^)())completionHandler {
     NSDictionary *userInfo = response.notification.request.content.userInfo;
-    NSLog(@"didReceiveNotificationResponse----------:%@", userInfo);
     [JPUSHService handleRemoteNotification:userInfo];
     if ([JPushActionQueue sharedInstance].isFlutterDidLoad) {
         [[NSNotificationCenter defaultCenter] postNotificationName:kJPFOpenNotification object:userInfo];
-        [[NSNotificationCenter defaultCenter] postNotificationName:kJPFDidReceiveRemoteNotification object:userInfo];
     } else {
         [JPushActionQueue sharedInstance].openedRemoteNotification = userInfo;
     }
